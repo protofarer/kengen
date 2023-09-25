@@ -1,10 +1,9 @@
 #[allow(warnings, dead_code)]
-use kengen::Game;
-use std::time::Instant;
-use std::{env, time::Duration};
-
-mod utils;
-use utils::logger::{LogLevel, Logger};
+use kengen::{
+    logger::{LogLevel, Logger},
+    Game,
+};
+use std::env;
 
 fn main() {
     handle_readline_args(env::args().collect::<Vec<String>>());

@@ -4,9 +4,10 @@ use sdl2::{
 };
 use std::time::{Duration, Instant};
 
-mod utils;
-use utils::dsa::FixedSizeQueue;
-use utils::logger::Logger;
+mod dsa;
+use dsa::FixedSizeQueue;
+pub mod logger;
+pub use logger::Logger;
 
 const FPS: u8 = 60;
 const FRAME_LIMIT_MS: f64 = 1000.0 / FPS as f64;
@@ -66,10 +67,6 @@ impl Game {
             .event_pump()
             .map_err(|_| InitError::EventPumpFailure)?;
 
-        canvas.set_draw_color(Color::RGB(0, 255, 0));
-        canvas.clear();
-        canvas.present();
-
         Logger::dbg("Finished initializing game");
 
         Ok(Self {
@@ -117,20 +114,17 @@ impl Game {
             }
 
             self.update();
-
-            self.canvas.clear();
-            self.canvas.present();
+            self.render();
         }
     }
 
-    // TODO not calculating ms since last update correctly
     pub fn update(&mut self) {
         let time_to_wait: f64 = FRAME_LIMIT_MS
             - Instant::now()
                 .duration_since(self.ms_prev_frame)
                 .as_millis() as f64;
 
-        // fixed frame rate when below threshold MILLISECS_PER_FRAME
+        // fixed frame rate: if below threshold MILLISECS_PER_FRAME then sleep
         if time_to_wait > 0.0 && time_to_wait <= FRAME_LIMIT_MS {
             let sleep_duration = Duration::new(0, (time_to_wait * 1000000.0) as u32);
             ::std::thread::sleep(sleep_duration);
@@ -152,7 +146,11 @@ impl Game {
         // TODO Update Registry
     }
 
-    pub fn render() -> () {}
+    pub fn render(&mut self) {
+        self.canvas.set_draw_color(Color::RGB(0, 255, 0));
+        self.canvas.clear();
+        self.canvas.present();
+    }
     pub fn process_input() -> () {}
     pub fn destroy(&self) {
         Logger::dbg("Destroy game");
