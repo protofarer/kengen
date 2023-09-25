@@ -1,0 +1,14 @@
+# Kenny's Engine
+- Learn 
+	- computer science, computer architecture
+	- game engine design and architecture
+	- software architecture
+	- game design and development
+	- concurrent programming
+	- graphics
+	- rust, FFI, script interfacing
+- Workhorse for 
+  - building games quickly and productively
+	- multimedia displays and experiences
+  - quick and dirty interfaces
+  - Innovation, eg implement something completely new or target an unorthodox hardware that no other engine supports.
