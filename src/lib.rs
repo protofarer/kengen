@@ -9,10 +9,23 @@ use dsa::FixedSizeQueue;
 pub mod logger;
 pub use logger::Logger;
 
-const FPS: u8 = 60;
-const FRAME_LIMIT_MS: f64 = 1000.0 / FPS as f64;
+const FRAMERATE: u8 = 60;
+const FRAME_LIMIT_MS: f64 = 1000.0 / FRAMERATE as f64;
 const WINDOW_WIDTH: u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
+
+// Game Loop States
+// eg:
+// [init] => Stopped => [run] => Running => [input: pause] => Paused => [input: stop]
+// => Stopped => [input: pause] => (no effect)Stopped => [input: start/resume] => Resuming => Running => [input: pause]
+// => Paused => [input: unpause] => Running
+pub enum RunState {
+    Stopped, //  when render not running
+    Running,
+    Paused,
+    Resuming, // transient state that marks going from Stopped -> Running
+    Exiting,
+}
 
 #[derive(Debug)]
 pub enum InitError {
@@ -31,7 +44,7 @@ impl std::fmt::Display for InitError {
 
 impl std::error::Error for InitError {}
 pub struct Game {
-    pub is_running: bool,
+    pub run_state: RunState,
     canvas: Canvas<Window>,
     event_pump: EventPump,
     ms_prev_frame: Instant,
@@ -70,7 +83,7 @@ impl Game {
         Logger::dbg("Finished initializing game");
 
         Ok(Self {
-            is_running: true,
+            run_state: RunState::Stopped,
             ms_prev_frame: Instant::now(),
             canvas,
             event_pump,
@@ -98,23 +111,84 @@ impl Game {
     }
 
     pub fn run(&mut self) -> () {
-        while self.is_running {
-            for event in self.event_pump.poll_iter() {
-                match event {
-                    Event::Quit { .. }
-                    | Event::KeyDown {
-                        keycode: Some(Keycode::Escape),
-                        ..
-                    } => {
-                        self.is_running = false;
-                        // break;
-                    }
-                    _ => {}
+        self.run_state = RunState::Running;
+        Logger::info("Game loop running");
+        loop {
+            self.handle_input();
+
+            match self.run_state {
+                RunState::Running => {
+                    self.update();
+                }
+                RunState::Paused => {
+                    let sleep_duration = Duration::new(0, (FRAME_LIMIT_MS * 1000000.0) as u32);
+                    ::std::thread::sleep(sleep_duration);
+                }
+                RunState::Stopped => {
+                    continue;
+                }
+                RunState::Resuming => self.run_state = RunState::Running,
+                RunState::Exiting => {
+                    break;
                 }
             }
 
-            self.update();
             self.render();
+        }
+    }
+
+    fn handle_input(&mut self) {
+        for event in self.event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => {
+                    // if game already stopped, then quit, eg takes 2 ESCs to exit game
+                    match self.run_state {
+                        RunState::Stopped => {
+                            Logger::info("Game exiting");
+                            self.run_state = RunState::Exiting;
+                        }
+                        _ => {
+                            Logger::info("Game stopped");
+                            self.run_state = RunState::Stopped;
+                        }
+                    }
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::P),
+                    ..
+                } => match self.run_state {
+                    RunState::Paused => {
+                        Logger::info("Game unpaused");
+                        self.run_state = RunState::Running;
+                    }
+                    RunState::Running => {
+                        Logger::info("Game paused");
+                        self.run_state = RunState::Paused;
+                    }
+                    _ => {}
+                },
+                Event::KeyDown {
+                    keycode: Some(Keycode::Semicolon),
+                    ..
+                } => match self.run_state {
+                    RunState::Stopped => {
+                        Logger::info("Game resuming");
+                        self.run_state = RunState::Resuming;
+                    }
+                    RunState::Paused | RunState::Running => {
+                        Logger::info("Game stopped");
+                        self.run_state = RunState::Stopped;
+                    }
+                    _ => {
+                        Logger::dbg("Cannot stop game while it is in process of resuming");
+                    }
+                },
+                _ => {}
+            }
         }
     }
 

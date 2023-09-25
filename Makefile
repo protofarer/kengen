@@ -22,3 +22,6 @@ runinfo:
 
 runcrit:
 	cargo run -- -l critical
+
+kill:
+	pkill --signal=9 $(EXECUTABLE_NAME)
