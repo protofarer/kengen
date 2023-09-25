@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 mod utils;
 use utils::logger::Logger;
 const FPS: u8 = 60;
-const MILLISECS_PER_FRAME: f64 = 1000.0 / FPS as f64;
+const FRAME_LIMIT_MS: f64 = 1000.0 / FPS as f64;
 const WINDOW_WIDTH: u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
 
@@ -118,10 +118,13 @@ impl Game {
 
     // TODO not calculating ms since last update correctly
     pub fn update(&mut self) {
-        let dt_last = Instant::now().duration_since(self.ms_prev_frame);
+        let time_to_wait: f64 = FRAME_LIMIT_MS
+            - Instant::now()
+                .duration_since(self.ms_prev_frame)
+                .as_millis() as f64;
 
-        let time_to_wait: f64 = MILLISECS_PER_FRAME - dt_last.as_millis() as f64;
-        if time_to_wait > 0.0 && time_to_wait <= MILLISECS_PER_FRAME {
+        // fixed frame rate when below threshold MILLISECS_PER_FRAME
+        if time_to_wait > 0.0 && time_to_wait <= FRAME_LIMIT_MS {
             let sleep_duration = Duration::new(0, (time_to_wait * 1000000.0) as u32);
             ::std::thread::sleep(sleep_duration);
             if sleep_duration.as_millis() <= 2 {
@@ -132,12 +135,11 @@ impl Game {
             }
         }
 
-        // let dt: f64 = (get_ticks - self.ms_prev_frame) as f64 / 1000.0;
+        let dt = Instant::now().duration_since(self.ms_prev_frame);
+        self.ms_prev_frame = Instant::now();
 
         // TODO Update Systems
         // TODO Update Registry
-
-        self.ms_prev_frame = Instant::now();
     }
 
     pub fn render() -> () {}
