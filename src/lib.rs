@@ -3,8 +3,11 @@ use sdl2::{
     video::Window, EventPump,
 };
 use std::time::{Duration, Instant};
+
 mod utils;
+use utils::dsa::FixedSizeQueue;
 use utils::logger::Logger;
+
 const FPS: u8 = 60;
 const FRAME_LIMIT_MS: f64 = 1000.0 / FPS as f64;
 const WINDOW_WIDTH: u32 = 800;
@@ -31,6 +34,8 @@ pub struct Game {
     canvas: Canvas<Window>,
     event_pump: EventPump,
     ms_prev_frame: Instant,
+    fps: f64,
+    fps_queue: FixedSizeQueue,
 }
 
 impl Game {
@@ -72,6 +77,8 @@ impl Game {
             ms_prev_frame: Instant::now(),
             canvas,
             event_pump,
+            fps: 0.0,
+            fps_queue: FixedSizeQueue::new(60),
         })
     }
 
@@ -137,6 +144,9 @@ impl Game {
 
         let dt = Instant::now().duration_since(self.ms_prev_frame);
         self.ms_prev_frame = Instant::now();
+        self.fps_queue
+            .push(dt.to_owned().as_millis().try_into().unwrap()); // dt to millis is u128
+        self.fps = self.fps_queue.avg().unwrap_or(0f64);
 
         // TODO Update Systems
         // TODO Update Registry
