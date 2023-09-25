@@ -1,5 +1,7 @@
+#[allow(warnings, dead_code)]
 use kengen::Game;
-use std::env;
+use std::time::Instant;
+use std::{env, time::Duration};
 
 mod utils;
 use utils::logger::{LogLevel, Logger};
@@ -7,8 +9,12 @@ use utils::logger::{LogLevel, Logger};
 fn main() {
     handle_readline_args(env::args().collect::<Vec<String>>());
 
-    let game = Game::new().unwrap();
-    // game.run();
+    let mut game = Game::new().unwrap_or_else(|e| {
+        println!("{}", e);
+        std::process::exit(1);
+    });
+
+    game.run();
     game.destroy();
 }
 
