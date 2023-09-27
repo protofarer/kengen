@@ -26,3 +26,25 @@ impl FixedSizeQueue {
         Some(sum as f64 / self.queue.len() as f64)
     }
 }
+
+pub struct BitSet {
+    size: usize,
+    value: u32,
+}
+
+impl BitSet {
+    pub fn new(size: usize) -> Self {
+        Self { size, value: 0 }
+    }
+    // pub fn set(idx: usize) {}
+    // pub fn insert(x: usize) {}
+    // pub fn contains(x: usize) -> bool {}
+    // pub fn remove(x: usize) {}
+    // pub fn clear(&self) {}
+    // pub fn is_empty(&self) -> bool {}
+    // pub fn size(&self) -> usize {}
+    // pub fn union(&self, other: &BitSet) -> BitSet {}
+    // pub fn intersection(&self, other: &BitSet) -> BitSet {}
+    // pub fn difference(&self, other: &BitSet) -> BitSet {}
+    // pub fn iter(&self) ->  {}
+}

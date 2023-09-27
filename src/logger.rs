@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use std::sync::Mutex;
 
-extern crate chrono;
+// extern crate chrono;
 
 use chrono::prelude::*;
 // use std::fs::OpenOptions;

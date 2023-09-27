@@ -44,9 +44,4 @@ fn handle_readline_args(args: Vec<String>) {
     };
 
     Logger::new(log_level, log_output);
-    Logger::dbg("debug");
-    Logger::info("debug");
-    Logger::warn("debug");
-    Logger::err("debug");
-    Logger::crit("debug");
 }

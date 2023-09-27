@@ -50,6 +50,7 @@ pub struct Game {
     ms_prev_frame: Instant,
     fps: f64,
     fps_queue: FixedSizeQueue,
+    is_debug_mode: bool,
 }
 
 impl Game {
@@ -71,12 +72,12 @@ impl Game {
             .build()
             .map_err(|_| InitError::WindowCreationFailed)?;
 
-        let mut canvas = window
+        let canvas = window
             .into_canvas()
             .build()
             .map_err(|_| InitError::CanvasCreationFailed)?;
 
-        let mut event_pump = sdl_context
+        let event_pump = sdl_context
             .event_pump()
             .map_err(|_| InitError::EventPumpFailure)?;
 
@@ -89,6 +90,7 @@ impl Game {
             event_pump,
             fps: 0.0,
             fps_queue: FixedSizeQueue::new(60),
+            is_debug_mode: false,
         })
     }
 
@@ -98,19 +100,19 @@ impl Game {
         // registry->AddSystem<MovementSystem>();
         // registry->AddSystem<RenderSystem>();
 
+        // Load tilemap/other assets and create entities and add components
+
+        // Create entities and add components
         // Entity tank = registry->CreateEntity();
         // tank.AddComponent<TransformComponent>(glm::vec2(10.0, 30.0), glm::vec2(1.0, 1.0), 0.0);
         // tank.AddComponent<RigidBodyComponent>(glm::vec2(40.0, 0.0));
         // tank.AddComponent<SpriteComponent>(10, 10);
 
-        // Entity truck = registry->CreateEntity();
-        // truck.AddComponent<TransformComponent>(glm::vec2(50.0, 100.0), glm::vec2(1.0, 1.0), 0.0);
-        // truck.AddComponent<RigidBodyComponent>(glm::vec2(0.0, 50.0));
-        // truck.AddComponent<SpriteComponent>(10, 50);
         Logger::dbg("END initialize game");
     }
 
     pub fn run(&mut self) -> () {
+        self.setup();
         self.run_state = RunState::Running;
         Logger::info("Game loop running");
         loop {
@@ -187,12 +189,27 @@ impl Game {
                         Logger::dbg("Cannot stop game while it is in process of resuming");
                     }
                 },
+                Event::KeyDown {
+                    keycode: Some(Keycode::D),
+                    ..
+                } => {
+                    self.is_debug_mode = !self.is_debug_mode;
+                    let mode = if self.is_debug_mode { "ON" } else { "OFF" };
+                    Logger::dbg(&format!("Debug mode {}", mode));
+                }
                 _ => {}
             }
         }
     }
 
     pub fn update(&mut self) {
+        self.tick_loop();
+
+        // TODO Update Systems
+        // TODO Update Registry
+    }
+
+    fn tick_loop(&mut self) {
         let time_to_wait: f64 = FRAME_LIMIT_MS
             - Instant::now()
                 .duration_since(self.ms_prev_frame)
@@ -215,9 +232,6 @@ impl Game {
         self.fps_queue
             .push(dt.to_owned().as_millis().try_into().unwrap()); // dt to millis is u128
         self.fps = self.fps_queue.avg().unwrap_or(0f64);
-
-        // TODO Update Systems
-        // TODO Update Registry
     }
 
     pub fn render(&mut self) {
