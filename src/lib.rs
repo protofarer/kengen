@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 
 mod dsa;
 use dsa::FixedSizeQueue;
+
 pub mod logger;
 pub use logger::Logger;
 

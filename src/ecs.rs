@@ -1,3 +1,6 @@
+mod dsa;
+use dsa::BitSet;
+
 pub struct Entity {
     id: usize,
     // registry: Registry
@@ -22,8 +25,16 @@ impl Entity {
 
 const MAX_COMPONENTS: u8 = 32;
 
-type Signature = std::bitset<MAX_COMPONENTS>;
+type Signature = BitSet;
 
 struct System {
     componentSignature: Signature,
+}
+
+impl System {
+    pub fn new() -> Self {
+        Self {
+            componentSignature: BitSet::new(),
+        }
+    }
 }
