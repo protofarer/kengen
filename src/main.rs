@@ -1,13 +1,14 @@
 #[allow(warnings, dead_code)]
 use kengen::{
+    game::Game,
     logger::{LogLevel, Logger},
-    Game,
 };
 use std::env;
 
 fn main() {
     handle_readline_args(env::args().collect::<Vec<String>>());
 
+    // todo propogate to main?
     let mut game = Game::new().unwrap_or_else(|e| {
         println!("{}", e);
         std::process::exit(1);

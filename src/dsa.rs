@@ -1,3 +1,4 @@
+#[allow(warnings, dead_code)]
 use std::collections::VecDeque;
 
 // TODO use traits to cover any from u8 to u64 depending on limit
@@ -30,6 +31,7 @@ impl FixedSizeQueue {
 
 // TODO generics/trait bounds to cover any size from u8 u32 u64
 // TODO tests
+// TODO read C++ implementation
 pub struct BitSet {
     data: u32,
 }
@@ -97,8 +99,8 @@ impl<'a> Iterator for BitSetIter<'a> {
         if self.position >= self.bitset.size() {
             return None;
         }
-        let value = self.bitset.get(self.position);
+        let bit = self.bitset.get(self.position);
         self.position += 1;
-        Some(value)
+        Some(bit)
     }
 }

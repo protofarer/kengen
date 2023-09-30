@@ -16,6 +16,8 @@ license = "MIT"
 sdl2 = { version = "0.35.2", features = ["image", "mixer", "ttf"] }
 chrono = "0.4.31"
 lazy_static = "1.4.0"
+anyhow = "1.0.75"
+nalgebra = "0.32.3"
 
 [alias]
 r = "run"
