@@ -5,12 +5,19 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::Index;
 use std::rc::Rc;
 
-mod components {
-    pub mod transformcomponent;
-}
+pub mod components;
+pub mod systems;
 
-mod systems {
-    pub mod movementsystem;
+pub trait Component {
+    fn get_id(&self) -> u32 {}
+    fn generate_id() -> u32 {
+        static mut COMPONENT_ID: u32 = 0;
+        unsafe {
+            let id = Self::COMPONENT_ID;
+            Self::COMPONENT_ID += 1;
+            id
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Hash)]
@@ -40,12 +47,6 @@ const MAX_COMPONENTS: u8 = 32;
 
 type Signature = BitSet;
 
-struct Component<T> {
-    next_id: usize, // how to make static so shared across Component types
-}
-
-impl<T> Component<T> {}
-
 // TODO make this a Trait
 pub struct System {
     component_signature: Signature,
@@ -65,53 +66,42 @@ impl System {
     // pub require_component() {}
 }
 
-trait IPool<T> {
-    fn is_empty(&self) -> bool;
-    fn add(&mut self, object: T);
-    fn get_size(&self) -> usize;
-    fn get(&self, index: usize) -> T;
-    fn set(&self, index: usize, object: T);
-}
-
 // trait bound to component types
-struct Pool<T> {
-    data: Vec<T>,
+struct Pool {
+    components: Vec<dyn Component>,
     size: usize,
     entity_id_to_index: HashMap<u32, u32>,
     index_to_entity_id: HashMap<u32, u32>,
 }
 
-impl<T> Pool<T> {
+impl Pool {
     pub fn new() -> Self {
         Self {
             size: 0,
-            data: Vec::new(),
+            components: Vec::new(),
             entity_id_to_index: HashMap::new(),
             index_to_entity_id: HashMap::new(),
         }
     }
-}
-
-impl<T> IPool<T> for Pool<T> {
-    fn is_empty(&self) -> bool {
-        self.data.is_empty()
+    pub fn is_empty(&self) -> bool {
+        self.components.is_empty()
     }
-    fn get_size(&self) -> usize {
-        self.data.len()
+    pub fn get_size(&self) -> usize {
+        self.components.len()
     }
-    fn add(&mut self, object: T) {
-        self.data.push(object);
+    pub fn add(&mut self, object: dyn Component) {
+        self.components.push(object);
     }
-    fn get(&self, index: usize) -> T {
-        self.data[index]
+    pub fn get(&self, index: usize) -> dyn Component {
+        self.components[index]
     }
-    fn set(&self, index: usize, object: T) {
-        self.data[index] = object;
+    pub fn set(&self, index: usize, object: dyn Component) {
+        self.components[index] = object;
     }
 }
 
-impl<T> Index<usize> for Pool<T> {
-    type Output = T;
+impl Index<usize> for Pool {
+    type Output = dyn Component;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.data[index]
@@ -121,7 +111,7 @@ impl<T> Index<usize> for Pool<T> {
 // TODO how to use Pool type without "caring" about Pool's generic?
 pub struct Registry {
     n_entities: usize,
-    component_pools: Vec<Box<dyn IPool>>,
+    component_pools: Vec<Box<Pool>>,
     entity_component_signatures: Vec<Signature>,
     systems: HashMap<TypeId, Rc<System>>,
     entities_to_be_added: HashSet<Entity>,
