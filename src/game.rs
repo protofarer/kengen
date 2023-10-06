@@ -1,13 +1,14 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use sdl2::{
     event::Event, keyboard::Keycode, pixels::Color, render::Canvas, version::revision,
     video::Window, EventPump,
 };
+use std::env;
 use std::time::{Duration, Instant};
 
 use crate::dsa::FixedSizeQueue;
 use crate::ecs::Registry;
-use crate::logger::Logger;
+use crate::logger::{LogLevel, Logger};
 
 const FRAMERATE: u8 = 60;
 const FRAME_LIMIT_MS: f64 = 1000.0 / FRAMERATE as f64;
@@ -43,6 +44,8 @@ impl std::fmt::Display for InitError {
 }
 
 impl std::error::Error for InitError {}
+
+pub struct GameConfiguration;
 pub struct Game {
     pub run_state: RunState,
     canvas: Canvas<Window>,
@@ -55,6 +58,21 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Result<Self, anyhow::Error> {
+        // todo 1. pass config struct
+        // todo 2. let game init/new parse readline
+        // todo 3. pass both, then readline args override config struct
+        // todo 4. read a toml config file that can be overriden by readline
+
+        let readline_args = parse_readline().unwrap_or_else(|e| {
+            eprintln!("{e}");
+            std::process::exit(1);
+        });
+
+        match readline_args.log_level {
+            Some(level) => Logger::new(level, None),
+            None => Logger::new(LogLevel::Debug, None),
+        };
+
         Logger::dbg("Initializing game");
         Logger::info(&format!("{}", revision())); // SDL version
 
@@ -105,7 +123,7 @@ impl Game {
         Logger::dbg("START initialize game");
 
         // Add systems that need to be processed
-        registry->AddSystem<MovementSystem>();
+        // registry->AddSystem<MovementSystem>();
         // registry->AddSystem<RenderSystem>();
 
         // Load tilemap/other assets and create entities and add components
@@ -257,5 +275,54 @@ impl Game {
 impl Drop for Game {
     fn drop(&mut self) {
         Logger::dbg("Drop game");
+    }
+}
+
+struct ReadlineArgs {
+    log_level: Option<LogLevel>,
+    log_output: Option<String>,
+}
+
+fn parse_readline() -> Result<ReadlineArgs, anyhow::Error> {
+    // Usage: kengen [--loglevel | -l <LogLevel word>] [--logoutput | -o <log_file>]
+    let mut args = env::args().peekable();
+    let mut readline_args = ReadlineArgs {
+        log_level: None,
+        log_output: None,
+    };
+
+    // if malformed arg value, throw
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "-l" | "--loglevel" => {
+                if let Some(log_level_arg) = args.next() {
+                    readline_args.log_level = Some(parse_log_level_value(&log_level_arg)?);
+                } else {
+                    return Err(anyhow!("Missing argument for log level"));
+                }
+            }
+            "-o" | "--logoutput" => {
+                if let Some(log_output_arg) = args.next() {
+                    readline_args.log_output = Some(log_output_arg.to_owned());
+                } else {
+                    return Err(anyhow!("Missing argument for log output"));
+                }
+            }
+            _ => {
+                println!("Invalid option: {}", arg);
+            }
+        }
+    }
+    Ok(readline_args)
+}
+
+fn parse_log_level_value(s: &str) -> Result<LogLevel, anyhow::Error> {
+    match s {
+        "debug" => Ok(LogLevel::Debug),
+        "info" => Ok(LogLevel::Info),
+        "warning" => Ok(LogLevel::Warning),
+        "error" => Ok(LogLevel::Error),
+        "critical" => Ok(LogLevel::Critical),
+        x => Err(anyhow!("Malformed or empty log level value: {x}")),
     }
 }

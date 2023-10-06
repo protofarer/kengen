@@ -30,13 +30,13 @@ lazy_static! {
 }
 
 impl Logger {
-    pub fn new(level: Option<LogLevel>, target: Option<&str>) -> Self {
+    pub fn new(level: LogLevel, target: Option<&str>) -> Self {
         // In this pattern, you're effectively using the Logger::new as a way to
         // optionally configure the logging behavior. If it's never called, the
         // system simply proceeds with defaults.
         // see lazy_static!
 
-        *GLOBAL_LOG_LEVEL.lock().unwrap() = level.unwrap_or(LogLevel::Debug);
+        *GLOBAL_LOG_LEVEL.lock().unwrap() = level;
         let target = match target {
             Some(path) => LoggerTarget::File(path.to_string()),
             None => LoggerTarget::Console,

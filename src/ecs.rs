@@ -8,17 +8,17 @@ use std::rc::Rc;
 pub mod components;
 pub mod systems;
 
-pub trait Component {
-    fn get_id(&self) -> u32 {}
-    fn generate_id() -> u32 {
-        static mut COMPONENT_ID: u32 = 0;
-        unsafe {
-            let id = Self::COMPONENT_ID;
-            Self::COMPONENT_ID += 1;
-            id
-        }
-    }
-}
+// pub trait Component {
+//     fn get_id(&self) -> u32 {}
+//     fn generate_id() -> u32 {
+//         static mut COMPONENT_ID: u32 = 0;
+//         unsafe {
+//             let id = Self::COMPONENT_ID;
+//             Self::COMPONENT_ID += 1;
+//             id
+//         }
+//     }
+// }
 
 #[derive(PartialEq, Eq, Hash)]
 struct Entity {
@@ -67,51 +67,51 @@ impl System {
 }
 
 // trait bound to component types
-struct Pool {
-    components: Vec<dyn Component>,
-    size: usize,
-    entity_id_to_index: HashMap<u32, u32>,
-    index_to_entity_id: HashMap<u32, u32>,
-}
+// struct Pool {
+//     components: Vec<dyn Component>,
+//     size: usize,
+//     entity_id_to_index: HashMap<u32, u32>,
+//     index_to_entity_id: HashMap<u32, u32>,
+// }
 
-impl Pool {
-    pub fn new() -> Self {
-        Self {
-            size: 0,
-            components: Vec::new(),
-            entity_id_to_index: HashMap::new(),
-            index_to_entity_id: HashMap::new(),
-        }
-    }
-    pub fn is_empty(&self) -> bool {
-        self.components.is_empty()
-    }
-    pub fn get_size(&self) -> usize {
-        self.components.len()
-    }
-    pub fn add(&mut self, object: dyn Component) {
-        self.components.push(object);
-    }
-    pub fn get(&self, index: usize) -> dyn Component {
-        self.components[index]
-    }
-    pub fn set(&self, index: usize, object: dyn Component) {
-        self.components[index] = object;
-    }
-}
+// impl Pool {
+//     pub fn new() -> Self {
+//         Self {
+//             size: 0,
+//             components: Vec::new(),
+//             entity_id_to_index: HashMap::new(),
+//             index_to_entity_id: HashMap::new(),
+//         }
+//     }
+//     pub fn is_empty(&self) -> bool {
+//         self.components.is_empty()
+//     }
+//     pub fn get_size(&self) -> usize {
+//         self.components.len()
+//     }
+//     pub fn add(&mut self, object: dyn Component) {
+//         self.components.push(object);
+//     }
+//     pub fn get(&self, index: usize) -> dyn Component {
+//         self.components[index]
+//     }
+//     pub fn set(&self, index: usize, object: dyn Component) {
+//         self.components[index] = object;
+//     }
+// }
 
-impl Index<usize> for Pool {
-    type Output = dyn Component;
+// impl Index<usize> for Pool {
+//     type Output = dyn Component;
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index]
-    }
-}
+//     fn index(&self, index: usize) -> &Self::Output {
+//         &self.data[index]
+//     }
+// }
 
 // TODO how to use Pool type without "caring" about Pool's generic?
 pub struct Registry {
     n_entities: usize,
-    component_pools: Vec<Box<Pool>>,
+    // component_pools: Vec<Box<Pool>>,
     entity_component_signatures: Vec<Signature>,
     systems: HashMap<TypeId, Rc<System>>,
     entities_to_be_added: HashSet<Entity>,
@@ -130,7 +130,7 @@ impl Registry {
     pub fn new() -> Self {
         Self {
             n_entities: 0,
-            component_pools: Vec::new(),
+            // component_pools: Vec::new(),
             entity_component_signatures: Vec::new(),
             systems: HashMap::new(),
             entities_to_be_added: HashSet::new(),
