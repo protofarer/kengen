@@ -1,9 +1,8 @@
 #[allow(warnings, dead_code)]
 use crate::dsa::{BitSet, FixedSizeQueue};
-use components::ComponentType;
 use std::any::TypeId;
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 use std::rc::Rc;
 
 pub mod components;
@@ -33,18 +32,16 @@ impl Entity {
 }
 
 // trait bound to component types
-struct Pool<ComponentType> {
-    components: Vec<ComponentType>,
-    size: usize,
-    entity_id_to_index: HashMap<u32, u32>,
-    index_to_entity_id: HashMap<u32, u32>,
+struct Pool<TComponent> {
+    components: Vec<TComponent>,
+    entity_id_to_index: HashMap<u32, usize>,
+    index_to_entity_id: HashMap<usize, u32>,
 }
 
-impl Pool {
+impl<TComponent> Pool<TComponent> {
     // use .reserve() ?
     pub fn new() -> Self {
         Self {
-            size: 0,
             components: Vec::new(),
             entity_id_to_index: HashMap::new(),
             index_to_entity_id: HashMap::new(),
@@ -56,22 +53,28 @@ impl Pool {
     pub fn get_size(&self) -> usize {
         self.components.len()
     }
-    pub fn add(&mut self, component: ComponentType) {
+    pub fn add(&mut self, component: TComponent) {
         self.components.push(component);
     }
-    pub fn get(&self, index: usize) -> ComponentType {
-        self.components[index]
+    pub fn get(&self, index: usize) -> &TComponent {
+        &self.components[index]
     }
-    pub fn set(&self, index: usize, component: ComponentType) {
+    pub fn set(&mut self, index: usize, component: TComponent) {
         self.components[index] = component;
     }
 }
 
-impl Index<usize> for Pool {
-    type Output = ComponentType;
+impl<TComponent> Index<usize> for Pool<TComponent> {
+    type Output = TComponent;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.components[index]
+    }
+}
+
+impl<TComponent> IndexMut<usize> for Pool<TComponent> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.components[index]
     }
 }
 
