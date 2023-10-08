@@ -58,6 +58,8 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Result<Self, anyhow::Error> {
+        Logger::dbg("INIT start");
+
         // todo 1. pass config struct
         // todo 2. let game init/new parse readline
         // todo 3. pass both, then readline args override config struct
@@ -73,7 +75,6 @@ impl Game {
             None => Logger::new(LogLevel::Debug, None),
         };
 
-        Logger::dbg("Initializing game");
         Logger::info(&format!("{}", revision())); // SDL version
 
         let sdl_context = sdl2::init()
@@ -91,6 +92,7 @@ impl Game {
         let window = video_subsystem
             .window("kengen", window_width, window_height)
             .position_centered()
+            .borderless()
             .build()
             .map_err(|e| anyhow::anyhow!("{}", e))
             .with_context(|| "Failed to create window".to_owned())?;
@@ -106,7 +108,7 @@ impl Game {
             .map_err(|e| anyhow::anyhow!("{}", e))
             .with_context(|| "Failed to create event pump".to_owned())?;
 
-        Logger::dbg("Finished initializing game");
+        Logger::dbg("INIT start");
 
         Ok(Self {
             run_state: RunState::Stopped,
@@ -120,7 +122,7 @@ impl Game {
     }
 
     fn setup(&self) {
-        Logger::dbg("START initialize game");
+        Logger::dbg("SETUP start");
 
         // Add systems that need to be processed
         // registry->AddSystem<MovementSystem>();
@@ -134,7 +136,7 @@ impl Game {
         // tank.AddComponent<RigidBodyComponent>(glm::vec2(40.0, 0.0));
         // tank.AddComponent<SpriteComponent>(10, 10);
 
-        Logger::dbg("END initialize game");
+        Logger::dbg("SETUP end");
     }
 
     pub fn run(&mut self) -> () {
@@ -144,14 +146,12 @@ impl Game {
         loop {
             self.handle_input();
 
-            // how badly does this slow down the frame? Should branching/tests be averted and existential state only be run? How? Stick it in handle_input, to break rather than check for state? Should it be an event to pause/resume/stop?
             match self.run_state {
                 RunState::Running => {
                     self.update();
                 }
                 RunState::Paused => {
-                    let sleep_duration = Duration::new(0, (FRAME_LIMIT_MS * 1000000.0) as u32);
-                    ::std::thread::sleep(sleep_duration);
+                    // show pause menu
                 }
                 RunState::Stopped => {
                     continue;
@@ -230,12 +230,6 @@ impl Game {
         }
     }
 
-    pub fn update(&mut self) {
-
-        // TODO Update Systems
-        // TODO Update Registry
-    }
-
     fn handle_tick(&mut self) {
         let time_to_wait: f64 = FRAME_LIMIT_MS
             - Instant::now()
@@ -259,6 +253,12 @@ impl Game {
         self.fps_queue
             .push(dt.to_owned().as_millis().try_into().unwrap()); // dt to millis is u128
         self.fps = self.fps_queue.avg().unwrap_or(0f64);
+    }
+
+    pub fn update(&mut self) {
+
+        // TODO Update Systems
+        // TODO Update Registry
     }
 
     pub fn render(&mut self) {
