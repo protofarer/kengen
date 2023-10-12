@@ -54,6 +54,7 @@ pub struct Game {
     fps: f64,
     fps_queue: FixedSizeQueue,
     is_debug_on: bool,
+    registry: Registry
 }
 
 impl Game {
@@ -108,7 +109,10 @@ impl Game {
             .map_err(|e| anyhow::anyhow!("{}", e))
             .with_context(|| "Failed to create event pump".to_owned())?;
 
-        Logger::dbg("INIT start");
+        let registry = Registry::new();
+
+        Logger::dbg("INIT end");
+
 
         Ok(Self {
             run_state: RunState::Stopped,
@@ -118,6 +122,7 @@ impl Game {
             fps: 0.0,
             fps_queue: FixedSizeQueue::new(60),
             is_debug_on: false,
+            registry
         })
     }
 

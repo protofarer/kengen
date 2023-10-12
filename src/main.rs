@@ -10,7 +10,4 @@ fn main() {
 
     // game.run();
     // game.destroy();
-    let mut c = HealthComponent::new(None, None);
-    c += 640000;
-    println!("{}", c.hp);
 }

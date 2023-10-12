@@ -9,11 +9,11 @@ pub mod components;
 pub mod systems;
 
 #[derive(PartialEq, Eq, Hash)]
-struct Entity {
+pub struct Entity {
     id: usize,
-    // registry: Registry
 }
 
+// does not access registry (as does the C++ engine)
 impl Entity {
     pub fn new(id: usize) -> Self {
         Self { id }
@@ -22,8 +22,6 @@ impl Entity {
     pub fn get_id(&self) -> usize {
         self.id
     }
-
-    pub fn kill() {}
 
     // pub fn add_component<TComponent>( ...args) {}
     // pub fn remove_component<TComponent>() {}
@@ -106,7 +104,8 @@ pub struct Registry {
     n_entities: usize,
     // component_pools: Vec<Box<Pool>>,
     entity_component_signatures: Vec<Signature>,
-    systems: HashMap<TypeId, Rc<System>>,
+    // change to Arc from Rc due to new registry singleton via lazy_static, for thread-safe atomic operations, do I need this, how do I know when this game engine is using multiple threads, how do I design for it... for later.. just get it working on 1 thread
+    systems: HashMap<TypeId, Rc<System>>,  
     entities_to_be_added: HashSet<Entity>,
     entities_to_be_killed: HashSet<Entity>,
 
@@ -133,8 +132,28 @@ impl Registry {
     }
 
     // * Entity Management
-    // pub fn create_entity() -> Entity {}
-    // pub fn kill_entity(entity: Entity) {}
+    pub fn create_entity(&mut self) -> Entity {
+        // check free entity vecdeque
+        let entity_id: usize;
+        if self.free_ids.is_empty() {
+            self.n_entities += 1;
+            entity_id = self.n_entities;
+
+            // ? investigate vector resizing
+            // if entity_id >= self.entity_component_signatures.len() {
+            //     self.entity_component_signatures.reserve(self.entity_component_signatures.len() + 10);
+            // }
+        } else {
+            entity_id = self.free_ids.pop_front().unwrap();
+        }
+
+        Entity::new(entity_id)
+        // entity.registry = this;  // entity must use get_instance, eg registry::KillEntity, TagEntity, GroupEntity, HasTag, HasGroup
+    }
+
+    pub fn kill_entity(&mut self, entity: Entity) {
+        self.entities_to_be_killed.insert(entity);
+    }
 
     // * Component Management
     // pub fn add_component<TComponent, Targs>(entity: Entity, args: Targs) {}
