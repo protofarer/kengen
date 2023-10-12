@@ -25,6 +25,10 @@ macro_rules! impl_component {
     };
 }
 
+pub trait NewFromArgs<Args> {
+    fn new(args: Args) -> Self;
+}
+
 pub struct TransformComponent {
     position: Vector2<f32>,
     scale: Vector2<f32>,
@@ -33,19 +37,31 @@ pub struct TransformComponent {
 
 impl_component!(TransformComponent);
 
-impl TransformComponent {
-    fn new(
-        position: Option<Vector2<f32>>,
-        scale: Option<Vector2<f32>>,
-        rotation: Option<f32>,
-    ) -> Self {
-        Self {
-            position: position.unwrap_or(Vector2::new(0.0, 0.0)),
-            scale: scale.unwrap_or(Vector2::new(0.0, 0.0)),
-            rotation: rotation.unwrap_or(0.0),
+// superceded by NewFromArgs
+// impl TransformComponent {
+//     fn new(
+//         position: Option<Vector2<f32>>,
+//         scale: Option<Vector2<f32>>,
+//         rotation: Option<f32>,
+//     ) -> Self {
+//         Self {
+//             position: position.unwrap_or(Vector2::new(0.0, 0.0)),
+//             scale: scale.unwrap_or(Vector2::new(0.0, 0.0)),
+//             rotation: rotation.unwrap_or(0.0),
+//         }
+//     }
+// }
+
+impl NewFromArgs<(Option<Vector2<f32>>, Option<Vector2<f32>>, Option<f32>)> for TransformComponent {
+    fn new(args: (Option<Vector2<f32>>, Option<Vector2<f32>>, Option<f32>)) -> Self {
+        TransformComponent {
+            position: args.0.unwrap_or(Vector2::new(0.0, 0.0)),
+            scale: args.1.unwrap_or(Vector2::new(0.0, 0.0)),
+            rotation: args.2.unwrap_or(0.0),
         }
     }
 }
+
 
 pub struct HealthComponent {
     hp: u16,

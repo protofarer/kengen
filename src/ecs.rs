@@ -4,6 +4,9 @@ use std::any::TypeId;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::{Index, IndexMut};
 use std::rc::Rc;
+use crate::ecs::components::Component;
+
+use crate::ecs::components::NewFromArgs;
 
 pub mod components;
 pub mod systems;
@@ -13,7 +16,7 @@ pub struct Entity {
     id: usize,
 }
 
-// does not access registry (as does the C++ engine)
+// (engdelta) does not access registry (as does the C++ engine)
 impl Entity {
     pub fn new(id: usize) -> Self {
         Self { id }
@@ -23,6 +26,7 @@ impl Entity {
         self.id
     }
 
+    // ? move to registry?
     // pub fn add_component<TComponent>( ...args) {}
     // pub fn remove_component<TComponent>() {}
     // pub fn has_component<TComponent>() -> bool {}
@@ -140,6 +144,7 @@ impl Registry {
             entity_id = self.n_entities;
 
             // ? investigate vector resizing
+            // (engdelta)
             // if entity_id >= self.entity_component_signatures.len() {
             //     self.entity_component_signatures.reserve(self.entity_component_signatures.len() + 10);
             // }
@@ -148,7 +153,7 @@ impl Registry {
         }
 
         Entity::new(entity_id)
-        // entity.registry = this;  // entity must use get_instance, eg registry::KillEntity, TagEntity, GroupEntity, HasTag, HasGroup
+        // (engdelta) entity.registry = this;  // entity must use get_instance, eg registry::KillEntity, TagEntity, GroupEntity, HasTag, HasGroup
     }
 
     pub fn kill_entity(&mut self, entity: Entity) {
@@ -156,7 +161,44 @@ impl Registry {
     }
 
     // * Component Management
-    // pub fn add_component<TComponent, Targs>(entity: Entity, args: Targs) {}
+    pub fn add_component<T: Component, Args>(&mut self, entity: Entity, args: Args) where T: NewFromArgs<Args> {
+        let component = T::new(args);
+
+        // (cppeng)
+        // const auto componentId = Component<TComponent>::GetId();
+        // const auto entityId = entity.GetId();
+
+        // if (componentId >= componentPools.size()) {
+        // 	componentPools.resize(componentId + 1, nullptr); // putting nothing there during resize, thus nullptr
+        // }
+
+        // if (!componentPools[componentId]) {
+        // 	std::shared_ptr<Pool<TComponent>> newComponentPool = std::make_shared<Pool<TComponent>>();
+        // 	componentPools[componentId] = newComponentPool;
+        // }
+
+        // // ? is type cast really needed?
+        // std::shared_ptr<Pool<TComponent>> componentPool = std::static_pointer_cast<Pool<TComponent>>(componentPools[componentId]);
+
+        // // superceded by the new tracker hashmaps and updated Pool::Set call below
+        // // if (entityId >= componentPool->GetSize()) {
+        // // 	componentPool->Resize(numEntities);
+        // // }
+
+        // // forward args to constructor
+        // TComponent newComponent(std::forward<TArgs>(args)...);
+
+        // componentPool->Set(entityId, newComponent);
+
+        // // remember ea Component is strictly data related to entity
+        // componentPool->Set(entityId, newComponent);
+
+        // // update the entity's component signature for the added component
+        // entityComponentSignatures[entityId].set(componentId);
+
+        // // Logger::Log("Component id = " + std::to_string(componentId) + " was added to entity id " +std::to_string(entityId));
+    }
+
     // pub fn remove_component<TComponent>(entity: Entity) {}
     // pub fn has_component<TComponent>(entity: Entity) -> bool {}
     // pub fn get_component<Tcomponent>(entity: Entity) -> TComponent {}
